@@ -6,28 +6,28 @@ auto describe(string title) {
 	struct Spec {
 
 		void should(void delegate()[string] parts) {
-			writeln(title, " should");
 			foreach (key, value; parts) {
 				writeln("  ", key);
 				value();
 			}
 		}
-		void as(void delegate(Spec it)[] parts ...) {
-			writeln(title, " should");
+		void as(void delegate(Spec it)[] parts ...) {			
 			foreach(part; parts) {
 				part(this);
 			}
 		}
-		void should(string text, lazy void test) {
+		auto should(string text, lazy void test) {
 			writeln("  ", text);
 			test();
+			return this;
 		}
-		void should(string text, void delegate() test) {
+		auto should(string text, void delegate(Spec it) test) {
 			writeln("  ", text);
-			test();
+			test(this);
+			return this;
 		}
-
 	}
+	writeln(title, " should");
 
 	return new Spec;
 }
@@ -76,21 +76,28 @@ auto must(T)(T match, string file = __FILE__, size_t line = __LINE__) {
 			if (is(typeof(expected == match) == bool))
 		{
 			if ((expected == match) != expectedComparison)
-				throw new MatchException("Expected <" ~ text(expected) ~ "> but got <" ~ text(match) ~ ">", file, line);
+				throw new MatchException("Expected " ~ 
+					(expectedComparison ? "" : "not ") ~
+					"<" ~ text(expected) ~ "> but got <" ~ 
+					text(match) ~ ">", file, line);
 		}
 		void between(T1)(T1 first, T1 last) 
 			if (is(typeof(match >= first) == bool))
 		{
 			bool inrange = (match >= first && match <= last);
 			if (inrange != expectedComparison)
-				throw new MatchException("Expected something between <" ~ text(first) ~ "> and <" ~ text(last) ~ "> but got <" ~ text(match) ~ ">", file, line);
+				throw new MatchException("Expected something " ~
+					(expectedComparison ? "" : "not ") ~
+					"between <" ~ text(first) ~ "> and <" ~ text(last) ~ "> but got <" ~ text(match) ~ ">", file, line);
 		}
 		void contain(T1)(T1 fragment) 
 			if (is(typeof(indexOf(match, fragment) != -1) == bool))
 		{
 			bool contains = indexOf(match, fragment) != -1;
 			if (contains != expectedComparison)
-				throw new MatchException("Expected <" ~ text(match) ~ "> to contain <" ~ text(fragment) ~ ">", file, line);
+				throw new MatchException("Expected <" ~ text(match) ~ "> to " ~
+					(expectedComparison ? "" : "not ") ~
+					"contain <" ~ text(fragment) ~ ">", file, line);
 		}
 
 		// Sugar

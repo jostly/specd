@@ -1,6 +1,12 @@
 import specd;
 
+version(unittest) {
+	void main() { }
+}
+
 unittest {
+
+
 	int executionSequence = 0;
 	int executionFlag = 0;
 	bool executionRan = false;
