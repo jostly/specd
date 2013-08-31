@@ -1,10 +1,8 @@
 {
 	"name": "specd",
-	"description": "An example project skeleton",
-	"homepage": "http://example.org",
-	"copyright": "Copyright © 2000, Your Name",
+	"copyright": "Copyright © 2013, Johan Östling",
 	"authors": [
-		"Your Name"
+		"Johan Östling"
 	],
 	"dependencies": {
 	}

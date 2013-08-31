@@ -1,9 +1,5 @@
 import specd;
 
-version(unittest) {
-	void main() { }
-}
-
 unittest {
 
 
