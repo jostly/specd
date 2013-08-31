@@ -4,10 +4,6 @@ import std.stdio, std.conv, std.string;
 
 Spec[] allSpecs;
 
-static ~this() {
-	reportAllSpecs();
-}
-
 string colour(bool success) {
 	if (success)
 		return "\x1b[32m";
