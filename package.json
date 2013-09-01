@@ -1,5 +1,6 @@
 {
 	"name": "specd",
+	"description": "Library for writing unit tests as specifications in D.",
 	"copyright": "Copyright © 2013, Johan Östling",
 	"authors": [
 		"Johan Östling"
