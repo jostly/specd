@@ -2,24 +2,7 @@ module specd;
 
 import std.stdio, std.conv, std.string;
 
-Spec[] allSpecs;
-
-string colour(bool success) {
-	if (success)
-		return "\x1b[32m";
-	else
-		return "\x1b[31m";
-}
-
-string colourOff() {
-	return "\x1b[39m";
-}
-
-private bool hasReported, reportedResult;
-
 bool reportAllSpecs() {
-	if (hasReported)
-		return reportedResult;
 
 	int successes = 0;
 	int total = 0;
@@ -28,138 +11,21 @@ bool reportAllSpecs() {
 	}
 
 	
-	reportedResult = successes == total;
-	writeln(colour(reportedResult),
+	auto reportedResult = successes == total;
+	writeln(Spec.colour(reportedResult),
 		reportedResult ? "SUCCESS" : "FAILURE",
 	 	" Failed: ", (total - successes), 
 	 	" out of ", total,
-	 	colourOff());
+	 	Spec.colourOff());
 
-	hasReported = true;
 	return reportedResult;
 }
 
-class SpecResult {
-	string test;
-	MatchException exception;
-
-	this(string test) {
-		this.test = test;
-		this.exception = null;
-	}
-
-	this(string test, MatchException exception) {
-		this.test = test;
-		this.exception = exception;
-	}
-
-	@property bool isSuccess() { return exception is null; }
-}
-
-class Spec {
-	string title;
-	SpecResult[] results;
-	@property bool isSuccess() {
-		foreach(result; results) {
-			if (!result.isSuccess)
-				return false;
-		}
-		return true;
-	}
-
-	this(string title) {
-		this.title = title;
-	}
-	void report(ref int successes, ref int total) {
-		writeln(colour(isSuccess), title, " should", colourOff());
-		foreach(result; results) {
-			total++;
-			writeln(colour(result.isSuccess), "  ", result.test, colourOff());
-			if (result.isSuccess) {
-				successes++;
-			} else {
-				writeln(result.exception);
-			}
-			
-		}
-	}
-
-	void should(void delegate()[string] parts) {
-		foreach (key, value; parts) {
-			try {
-				value();
-				results ~= new SpecResult(key);
-			} catch (MatchException e) {
-				results ~= new SpecResult(key, e);
-			}
-		}
-	}
-	void as(void delegate(Spec it)[] parts ...) {			
-		foreach(part; parts) {
-			part(this);
-		}
-	}
-	auto should(string text, lazy void test) {
-		try {
-			test();
-			results ~= new SpecResult(text);
-		} catch (MatchException e) {
-			results ~= new SpecResult(text, e);
-		}
-		return this;
-	}
-	auto should(string text, void delegate(Spec it) test) {
-		try {
-			test(this);
-			results ~= new SpecResult(text);
-		} catch (MatchException e) {
-			results ~= new SpecResult(text, e);
-		}
-		return this;
-	}
-}
-
-
-auto describe(string title) {
-	
+auto describe(string title) {	
 	auto spec = new Spec(title);
 	allSpecs ~= spec;
 	return spec;
 }
-
-class MatchException : Exception {
-	this(string s, string file = __FILE__, size_t line = __LINE__) {
-		super(s, file, line);
-	}
-}
-
-/* TODO Maybe later?
-interface Matcher {
-	bool matches(B)(B candidate);
-}
-
-class EqualMatcher(A) : Matcher {
-	A _expected;
-	string _file;
-	size_t _line;
-	this(A expected, string file, size_t line) {
-		_expected = expected;
-		_file = file;
-		_line = line;
-	}
-
-	bool matches(B)(B candidate) 
-		if (is(typeof(candidate == expected) == bool))
-	{
-		return candidate == expected;
-	}
-}
-
-auto equal(T)(T expected, string file = __FILE__, size_t line = __LINE__) {
-	return new EqualMatcher(expected, file, line);
-}
-*/
-
 
 auto must(T)(T match, string file = __FILE__, size_t line = __LINE__) {
 
@@ -258,3 +124,107 @@ auto must(T)(T match, string file = __FILE__, size_t line = __LINE__) {
 
 	return new MatchStatement!(T);
 }
+
+protected:
+
+Spec[] allSpecs;
+
+class SpecResult {
+	string test;
+	MatchException exception;
+
+	this(string test) {
+		this.test = test;
+		this.exception = null;
+	}
+
+	this(string test, MatchException exception) {
+		this.test = test;
+		this.exception = exception;
+	}
+
+	@property bool isSuccess() { return exception is null; }
+}
+
+class Spec {
+	string title;
+	SpecResult[] results;
+	@property bool isSuccess() {
+		foreach(result; results) {
+			if (!result.isSuccess)
+				return false;
+		}
+		return true;
+	}
+
+	this(string title) {
+		this.title = title;
+	}
+
+	static string colour(bool success) {
+		if (success)
+			return "\x1b[32m";
+		else
+			return "\x1b[31m";
+	}
+
+	static string colourOff() {
+		return "\x1b[39m";
+	}
+
+	void report(ref int successes, ref int total) {
+		writeln(colour(isSuccess), title, " should", colourOff());
+		foreach(result; results) {
+			total++;
+			writeln(colour(result.isSuccess), "  ", result.test, colourOff());
+			if (result.isSuccess) {
+				successes++;
+			} else {
+				writeln(result.exception);
+			}
+			
+		}
+	}
+
+	void should(void delegate()[string] parts) {
+		foreach (key, value; parts) {
+			try {
+				value();
+				results ~= new SpecResult(key);
+			} catch (MatchException e) {
+				results ~= new SpecResult(key, e);
+			}
+		}
+	}
+	void as(void delegate(Spec it)[] parts ...) {			
+		foreach(part; parts) {
+			part(this);
+		}
+	}
+	auto should(string text, lazy void test) {
+		try {
+			test();
+			results ~= new SpecResult(text);
+		} catch (MatchException e) {
+			results ~= new SpecResult(text, e);
+		}
+		return this;
+	}
+	auto should(string text, void delegate(Spec it) test) {
+		try {
+			test(this);
+			results ~= new SpecResult(text);
+		} catch (MatchException e) {
+			results ~= new SpecResult(text, e);
+		}
+		return this;
+	}
+}
+
+
+class MatchException : Exception {
+	this(string s, string file = __FILE__, size_t line = __LINE__) {
+		super(s, file, line);
+	}
+}
+
