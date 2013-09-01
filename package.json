@@ -5,5 +5,17 @@
 		"Johan Östling"
 	],
 	"dependencies": {
-	}
+	},
+	"configurations": [
+		{
+			"name": "build",
+			"targetType": "library"
+		},
+		{
+			"name": "test",
+			"dflags": ["-unittest"],
+			"versions": ["SpecDTests"],
+			"targetType": "executable"
+		}
+	]
 }

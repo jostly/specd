@@ -1,31 +1,55 @@
-module specd;
+module specd.mustmatchers;
 
-import std.stdio, std.conv, std.string;
+import specd.specd;
 
-bool reportAllSpecs() {
+import std.conv, std.string;
 
-	int successes = 0;
-	int total = 0;
-	foreach(spec; allSpecs) {
-		spec.report(successes, total);
+version(SpecDTests) unittest {
+
+	describe("must matching").should([		
+		"work on string": {
+			"foo".must.equal("foo");
+		},
+		"work on int": {
+			2.must.equal(2);
+		},
+		"work on double": {
+			1.3.must.equal(1.3);		
+		},
+		"work on object": {
+			auto a = new Object;
+			a.must.equal(a);
+		},
+		"throw a MatchException if it doesn't match": {
+			try {
+				1.must.equal(2);
+				assert(false, "Expected a MatchException");
+			} catch (MatchException e) {				
+			}
+		},
+		"invert matching with not": {
+			2.must.not.equal(1);
+		},
+		"match a range with between": {
+			1.must.be.between(1,3);
+			2.must.be.between(1,3);
+			3.must.be.between(1,3);
+			4.must.not.be.between(1,3);
+			0.must.not.be.between(1,3);
+		},
+		"match partial strings": {
+			"frobozz".must.contain("oboz");
+			"frobozz".must.not.contain("bracken");
+		}
+	]);
+}
+
+class MatchException : Exception {
+	this(string s, string file = __FILE__, size_t line = __LINE__) {
+		super(s, file, line);
 	}
-
-	
-	auto reportedResult = successes == total;
-	writeln(Spec.colour(reportedResult),
-		reportedResult ? "SUCCESS" : "FAILURE",
-	 	" Failed: ", (total - successes), 
-	 	" out of ", total,
-	 	Spec.colourOff());
-
-	return reportedResult;
 }
 
-auto describe(string title) {	
-	auto spec = new Spec(title);
-	allSpecs ~= spec;
-	return spec;
-}
 
 auto must(T)(T match, string file = __FILE__, size_t line = __LINE__) {
 
@@ -124,107 +148,3 @@ auto must(T)(T match, string file = __FILE__, size_t line = __LINE__) {
 
 	return new MatchStatement!(T);
 }
-
-protected:
-
-Spec[] allSpecs;
-
-class SpecResult {
-	string test;
-	MatchException exception;
-
-	this(string test) {
-		this.test = test;
-		this.exception = null;
-	}
-
-	this(string test, MatchException exception) {
-		this.test = test;
-		this.exception = exception;
-	}
-
-	@property bool isSuccess() { return exception is null; }
-}
-
-class Spec {
-	string title;
-	SpecResult[] results;
-	@property bool isSuccess() {
-		foreach(result; results) {
-			if (!result.isSuccess)
-				return false;
-		}
-		return true;
-	}
-
-	this(string title) {
-		this.title = title;
-	}
-
-	static string colour(bool success) {
-		if (success)
-			return "\x1b[32m";
-		else
-			return "\x1b[31m";
-	}
-
-	static string colourOff() {
-		return "\x1b[39m";
-	}
-
-	void report(ref int successes, ref int total) {
-		writeln(colour(isSuccess), title, " should", colourOff());
-		foreach(result; results) {
-			total++;
-			writeln(colour(result.isSuccess), "  ", result.test, colourOff());
-			if (result.isSuccess) {
-				successes++;
-			} else {
-				writeln(result.exception);
-			}
-			
-		}
-	}
-
-	void should(void delegate()[string] parts) {
-		foreach (key, value; parts) {
-			try {
-				value();
-				results ~= new SpecResult(key);
-			} catch (MatchException e) {
-				results ~= new SpecResult(key, e);
-			}
-		}
-	}
-	void as(void delegate(Spec it)[] parts ...) {			
-		foreach(part; parts) {
-			part(this);
-		}
-	}
-	auto should(string text, lazy void test) {
-		try {
-			test();
-			results ~= new SpecResult(text);
-		} catch (MatchException e) {
-			results ~= new SpecResult(text, e);
-		}
-		return this;
-	}
-	auto should(string text, void delegate(Spec it) test) {
-		try {
-			test(this);
-			results ~= new SpecResult(text);
-		} catch (MatchException e) {
-			results ~= new SpecResult(text, e);
-		}
-		return this;
-	}
-}
-
-
-class MatchException : Exception {
-	this(string s, string file = __FILE__, size_t line = __LINE__) {
-		super(s, file, line);
-	}
-}
-
