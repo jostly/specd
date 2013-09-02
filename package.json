@@ -1,6 +1,6 @@
 {
 	"name": "specd",
-	"description": "Library for writing unit tests as specifications in D.",
+	"description": "Library for expressing specifications (for unit testing) in D.",
 	"copyright": "Copyright © 2013, Johan Östling",
 	"authors": [
 		"Johan Östling"
@@ -14,7 +14,7 @@
 		},
 		{
 			"name": "test",
-			"versions": ["SpecDTests"],
+			"versions": ["specrunner", "SpecDTests"],
 			"targetType": "executable"
 		}
 	]

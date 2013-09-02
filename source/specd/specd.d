@@ -4,9 +4,9 @@ public import specd.mustmatchers;
 
 import std.stdio;
 
-version(SpecDTests) {
-	void main() {
-		reportAllSpecs();
+version(specrunner) {
+	int main() {
+		return reportAllSpecs() ? 0 : 10;
 	}
 }
 
@@ -38,7 +38,6 @@ auto describe(string title) {
 private:
 
 version(SpecDTests) unittest {
-
 
 	int executionSequence = 0;
 	int executionFlag = 0;

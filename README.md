@@ -1,12 +1,56 @@
 # specd
 
+Write unit tests as specifications, not assertions.
 
-Library for writing unit tests as specifications in D.
+	describe("a specifications DSL").as((it) {
+		it.should("read as natural language", (so) {
+			"DSL useage".must.contain("use");
 
-Consists of two parts, specifications and matchers.
+		});
+		it.should("not be clunky, therefore", "statements".must.not.equal("overly verbose"));
+	});
+
+	describe("specd")
+		.should("be easy to use, yet expressive", 
+			"user".must.not.be.between("rock", "hard place"))
+	;
+
+## Getting started
+
+Write specifications in a unittest block:
+
+	unittest {
+		describe("a string")
+			.should("have a length property", "foo".length.must.equal(3))
+		;
+	}
+
+To automatically run the tests with reporting, compile with version /specrunner/:
+
+	dmd /source/ -unittest -version=specrunner
+
+or if you're using dub, create a configuration in package.json:
+
+	"configurations": [
+		{
+			"name": "test",
+			"versions": ["specrunner"],
+			"targetType": "executable"
+		}
+	]
+
+Compiling with /specrunner/ will add a simple main():
+
+	version(specrunner) {
+		int main() {
+			return reportAllSpecs() ? 0 : 10;
+		}
+	}
+
+If you prefer to activate it yourself, just call reportAllSpecs(). It returns true if
+all tests succeded, false otherwise.
 
 ## Specifications
-
 
 A specification describes something, and so you begin by writing
 
@@ -146,4 +190,6 @@ Any type that can be null can be matched for null:
 	someObjectReference.must.be.Null;
 
 Note that you cannot use equals when testing for null, since testing for equality to null is not valid D.
+
+
 
