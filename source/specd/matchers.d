@@ -23,10 +23,6 @@ version(SpecDTests) unittest {
 
 }
 
-Match!T must(T)(lazy T m, string file = __FILE__, size_t line = __LINE__) {
-	return new Match!T({ return m(); }, file, line);
-}
-
 version(SpecDTests) unittest {
 
 	describe("equal matching").should([		
@@ -127,6 +123,44 @@ version(SpecDTests) unittest {
 		}
 	]);
 
+	class TestException : Exception {
+		this(string s) {
+			super(s);
+		}
+
+	}
+
+	int throwAnException() {
+		throw new TestException("foo");
+	}
+
+	void throwAnExceptionAndReturnVoid() {
+		throw new TestException("bar");
+	}
+
+	describe("Exception matching").should([
+		"match when an exception is thrown": {
+			throwAnException().must.throw_!TestException;
+			1.must.not.throw_!TestException;
+		},
+		"work with void function calls": {
+			calling(throwAnExceptionAndReturnVoid()).must.throw_!TestException;
+		}
+	]);
+}
+
+private struct Calling {};
+
+Match!Calling calling(lazy void m, string file = __FILE__, size_t line = __LINE__) {
+	return new Match!Calling({ m(); return Calling(); }, file, line);
+}
+
+auto must(T)(lazy T m, string file = __FILE__, size_t line = __LINE__) {
+	static if (is(T : Match!Calling)) {
+		return m(); // Allow the form calling(foo()).must.throw....
+	} else {
+		return new Match!T({ return m(); }, file, line);
+	}	
 }
 
 class Match(T) {
@@ -306,3 +340,23 @@ void Null(T)(Match!T matcher)
 			text(match) ~ ">");
 
 }	
+
+void throw_(E, T)(Match!T matcher)
+	if (is(E : Throwable))
+{
+	string exception = "";
+	try {
+		matcher.match();
+		if (matcher.isPositiveMatch)
+			exception = "Expected " ~
+				E.stringof ~ " thrown, but nothing was thrown";
+
+	} catch (E e) {
+		if (!matcher.isPositiveMatch) 
+			exception = "Expected no " ~
+				E.stringof ~ " thrown, but got " ~ typeof(e).stringof;
+	}
+
+	if (exception != "")
+		matcher.throwMatchException(exception);
+}

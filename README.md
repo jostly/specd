@@ -213,6 +213,18 @@ Any type that can be null can be matched for null:
 
 Note that you cannot use equals when testing for null, since testing for equality to null is not valid D.
 
+### Matching (not) thrown exceptions
+
+You can match on an expression throwing or not throwing an exception:
+
+	something().must.throw_!SomeException;
+	something().must.not.throw_!SomeOtherException;
+
+The above works when the expression on the left returns a value. If the return type is void, you must wrap
+it in calling():
+
+	calling( somethingReturningVoid() ).must.throw_!SomeOtherException;
+
 ## Writing custom matchers
 
 Extending with custom matchers is as simple as defining new functions which take a Matcher as the first
