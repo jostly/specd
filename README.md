@@ -191,5 +191,12 @@ Any type that can be null can be matched for null:
 
 Note that you cannot use equals when testing for null, since testing for equality to null is not valid D.
 
+## Writing custom matchers
+
+Extending with custom matchers is as simple as defining new functions which take a Matcher as the first
+argument. D will rewrite a call to matcher.foo(...) to a call to your function void foo(matcher, ...)
+
+Look at the matchers supplied in matcher.d for an example on how to write them.
+
 
 
