@@ -1,6 +1,6 @@
 module specd.specification;
 
-import specd.mustmatchers;
+import specd.matchers;
 
 import std.stdio;
 
