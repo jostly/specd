@@ -137,6 +137,28 @@ matches pass.
 	1.must.equal(1.0);
 	[1, 2, 3].must.equal([1f, 2f, 3f]);
 
+Another way of expressing this is:
+
+	"foo".must == "foo";
+	"bar".must.not == "foo";
+
+They are functionally equivalent.
+
+### Comparison matches
+
+Any pair of types that can be compared against each other (>, >=, <, <=) can be used in a comparison match:
+
+	1.must.be.greater_than(0);
+	"foo".must.not.be.less_than_or_equal_to("bar");
+
+If these are too wordy for your taste, you can use the alternative shorter form:
+
+	1.must.be_!"<" (2);
+
+Note the underscore, which is there to avoid a conflict with the no-args be(), and also to make the whole
+line a little more readable. The two forms are functionally equivalent, and are reported the same way,
+using words for the operator.
+
 ### Range matches
 
 Any types that can be compared for less than and greater than can be compared for a range:

@@ -23,46 +23,8 @@ version(SpecDTests) unittest {
 
 }
 
-Match!T must(T)(lazy T m) {
-	return new Match!T({ return m(); });
-}
-
-class Match(T) {
-	T delegate() match;
-	// TODO I use this for comparing a generic type with the type of this Match. 
-	// Might be a better way to do that.
-	T dummyMatch;
-	// Signal that the match is positive, ie it has not been negated with "not" in the chain
-	// (or if it has, it has been negated again by a second "not")
-	bool isPositiveMatch = true;
-
-	this(T delegate() match) {
-		this.match = match;
-	}
-
-	// Negated match
-
-	auto not() {
-		isPositiveMatch = !isPositiveMatch;
-		return this;
-	}
-
-	// Sugar
-	auto be() {
-		return this;
-	}
-
-	// Help for matching booleans
-	static if (is(T == bool)) {
-		void be(bool expected, string file = __FILE__, size_t line = __LINE__) {
-			if (expected)
-				True(this, file, line);
-			else
-				False(this, file, line);
-		}
-	}
-
-
+Match!T must(T)(lazy T m, string file = __FILE__, size_t line = __LINE__) {
+	return new Match!T({ return m(); }, file, line);
 }
 
 version(SpecDTests) unittest {
@@ -131,7 +93,93 @@ version(SpecDTests) unittest {
 		}
 	]);
 
+	describe("opEquals matching").should([
+		"match == for basic types": {
+			1.must == 1;
+			1.must.not == 2;
+		},
+		"match == for objects": {
+			Object a = new Object();
+			Object b = new Object();
+			a.must == a;
+			a.must.not == b;			
+		}
+	]);
+
+
+	describe("comparison matching").should([
+		"match greater_than": {
+			1.must.be.greater_than(0);
+			1.must.not.be.greater_than(1);
+			1.must.be_!">" (0);
+		},
+		"match greater_than_or_equal_to": {
+			1.must.be.greater_than_or_equal_to(1);
+			1.must.not.be.greater_than_or_equal_to(2);
+		},
+		"match less_than": {
+			1.must.be.less_than(2);
+			1.must.not.be.less_than(1);
+		},
+		"match less_than_or_equal_to": {
+			1.must.be.less_than_or_equal_to(1);
+			1.must.not.be.less_than_or_equal_to(0);
+		}
+	]);
+
 }
+
+class Match(T) {
+	T delegate() match;
+	// TODO I use this for comparing a generic type with the type of this Match. 
+	// Might be a better way to do that.
+	T dummyMatch;
+	// Signal that the match is positive, ie it has not been negated with "not" in the chain
+	// (or if it has, it has been negated again by a second "not")
+	bool isPositiveMatch = true;
+	string file;
+	size_t line;
+
+	this(T delegate() match, string file, size_t line) {
+		this.match = match;
+		this.file = file;
+		this.line = line;
+	}
+
+	// Negated match
+
+	auto not() {
+		isPositiveMatch = !isPositiveMatch;
+		return this;
+	}
+
+	// Sugar
+	auto be() {
+		return this;
+	}
+
+	// Help for matching booleans
+	static if (is(T == bool)) {
+		void be(bool expected) {
+			if (expected)
+				True(this);
+			else
+				False(this);
+		}
+	}
+
+	bool opEquals(T rhs) {
+		equal(this, rhs);
+		return true;
+	}
+
+	alias Object.opEquals opEquals;
+
+	void throwMatchException(string reason) {
+		throw new MatchException(reason, file, line);
+	}
+}
+
 
 class MatchException : Exception {
 	this(string s, string file = __FILE__, size_t line = __LINE__) {
@@ -139,66 +187,122 @@ class MatchException : Exception {
 	}
 }
 
-// TODO create a helper function for MatchException reporting
-void equal(T, T1)(Match!T matcher, T1 expected, string file = __FILE__, size_t line = __LINE__)
+
+void equal(T, T1)(Match!T matcher, T1 expected)
 	if (is(typeof(expected == matcher.dummyMatch) == bool))
 {
 	auto match = matcher.match();
 	if ((expected == match) != matcher.isPositiveMatch)
-		throw new MatchException("Expected " ~ 
+		matcher.throwMatchException("Expected " ~ 
 			(matcher.isPositiveMatch ? "" : "not ") ~
 			"<" ~ text(expected) ~ "> but got <" ~ 
-			text(match) ~ ">", file, line);
+			text(match) ~ ">");
 }
 
-void between(T, T1)(Match!T matcher, T1 first, T1 last, string file = __FILE__, size_t line = __LINE__) 
+private string comparisonInWords(string op)() {
+	if (op == "<")
+		return "less than";
+	else if (op == "<=")
+		return "less than or equal to";
+	else if (op == ">")
+		return "greater than";
+	else if (op == ">=")
+		return "greater than or equal to";
+	else
+		return "*unknown operation*";
+}
+
+private void comparison(string op, T, T1)(Match!T matcher, T1 expected) {
+	auto match = matcher.match();
+	auto cmp = mixin("match " ~ op ~ " expected");
+	if (cmp != matcher.isPositiveMatch)
+		matcher.throwMatchException("Expected something " ~ 
+			(matcher.isPositiveMatch ? "" : "not ") ~
+			comparisonInWords!op ~
+			" <" ~ text(expected) ~ "> but got <" ~ 
+			text(match) ~ ">");
+
+}
+
+void greater_than(T, T1)(Match!T matcher, T1 expected)
+	if (is(typeof(matcher.dummyMatch > expected) == bool))
+{
+	comparison!">"(matcher, expected);
+}
+
+void greater_than_or_equal_to(T, T1)(Match!T matcher, T1 expected)
+	if (is(typeof(matcher.dummyMatch >= expected) == bool))
+{
+	comparison!">="(matcher, expected);
+}
+
+void less_than(T, T1)(Match!T matcher, T1 expected)
+	if (is(typeof(matcher.dummyMatch < expected) == bool))
+{
+	comparison!"<"(matcher, expected);
+}
+
+void less_than_or_equal_to(T, T1)(Match!T matcher, T1 expected)
+	if (is(typeof(matcher.dummyMatch <= expected) == bool))
+{
+	comparison!"<="(matcher, expected);
+}
+
+void be_(string op, T, T1)(Match!T matcher, T1 expected)
+	if (is(typeof(matcher.dummyMatch > expected) == bool) &&
+		(op == ">" || op == ">=" || op == "<" || op == "<="))
+{
+	comparison!op(matcher, expected);
+}
+
+void between(T, T1)(Match!T matcher, T1 first, T1 last) 
 	if (is(typeof(matcher.dummyMatch >= first) == bool))
 {
 	auto match = matcher.match();
 	bool inrange = (match >= first && match <= last);
 	if (inrange != matcher.isPositiveMatch)
-		throw new MatchException("Expected something " ~
+		matcher.throwMatchException("Expected something " ~
 			(matcher.isPositiveMatch ? "" : "not ") ~
-			"between <" ~ text(first) ~ "> and <" ~ text(last) ~ "> but got <" ~ text(match) ~ ">", file, line);
+			"between <" ~ text(first) ~ "> and <" ~ text(last) ~ "> but got <" ~ text(match) ~ ">");
 }
-void contain(T, T1)(Match!T matcher, T1 fragment, string file = __FILE__, size_t line = __LINE__) 
+void contain(T, T1)(Match!T matcher, T1 fragment) 
 	if (is(typeof(indexOf(matcher.dummyMatch, fragment) != -1) == bool))
 {
 	auto match = matcher.match();
 	bool contains = indexOf(match, fragment) != -1;
 	if (contains != matcher.isPositiveMatch)
-		throw new MatchException("Expected <" ~ text(match) ~ "> to " ~
+		matcher.throwMatchException("Expected <" ~ text(match) ~ "> to " ~
 			(matcher.isPositiveMatch ? "" : "not ") ~
-			"contain <" ~ text(fragment) ~ ">", file, line);
+			"contain <" ~ text(fragment) ~ ">");
 }
 
-void True(Match!bool matcher, string file = __FILE__, size_t line = __LINE__) {
+void True(Match!bool matcher) {
 	auto match = matcher.match();
 	if (match != matcher.isPositiveMatch)
-		throw new MatchException("Expected <" ~
+		matcher.throwMatchException("Expected <" ~
 			(matcher.isPositiveMatch ? "true" : "false") ~
 			"> but got <" ~
-			text(match) ~ ">", file, line);
+			text(match) ~ ">");
 }
 
-void False(Match!bool matcher, string file = __FILE__, size_t line = __LINE__) {
+void False(Match!bool matcher) {
 	auto match = matcher.match();
 	if (match == matcher.isPositiveMatch)
-		throw new MatchException("Expected <" ~
+		matcher.throwMatchException("Expected <" ~
 			(matcher.isPositiveMatch ? "false" : "true") ~
 			"> but got <" ~
-			text(match) ~ ">", file, line);
+			text(match) ~ ">");
 }
 
-void Null(T)(Match!T matcher, string file = __FILE__, size_t line = __LINE__)
+void Null(T)(Match!T matcher)
 	if (is(typeof(matcher.dummyMatch is null) == bool))
 {
 	auto match = matcher.match();
 	bool isNull = match is null;
 	if (isNull != matcher.isPositiveMatch)
-		throw new MatchException("Expected " ~
+		matcher.throwMatchException("Expected " ~
 			(matcher.isPositiveMatch ? "" : "not ") ~
 			"<null> but got <" ~
-			text(match) ~ ">", file, line);
+			text(match) ~ ">");
 
 }	
