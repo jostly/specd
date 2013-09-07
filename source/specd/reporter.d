@@ -32,31 +32,37 @@ interface Reporter {
 
 class ConsoleReporter : Reporter {
 	override void reportSpecificationGroup(SpecificationGroup group) {
-		writeln(colour(group.isSuccess), group.title, " should", colourOff());
+		writeln(mark(group.isSuccess), group.title, " should", markOff());
 	}
 
 	override void reportSpecification(Specification spec) {
-		writeln(colour(spec.isSuccess), "  ", spec.test, colourOff());
+		writeln(mark(spec.isSuccess), "  ", spec.test, markOff());
 		if (!spec.isSuccess)
 			writeln(spec.exception);
 	}
 
 	override void reportSummary(int totalNumberOfSpecs, int numberOfFailedSpecs) {
 		auto success = numberOfFailedSpecs == 0;
-		writeln(colour(success), success ? "SUCCESS" : "FAILURE",
+		writeln(mark(success), success ? "SUCCESS" : "FAILURE",
 			" Failed: ", numberOfFailedSpecs,
 			" out of ", totalNumberOfSpecs,
-			colourOff());
+			markOff());
 	}
 
-	string colour(bool success) {
+version(Posix) {
+	string mark(bool success) {
 		if (success)
 			return "\x1b[32m";
 		else
 			return "\x1b[31m";
 	}
 
-	string colourOff() {
+	string markOff() {
 		return "\x1b[39m";
-	}	
+	}		
+} else {
+	string mark(bool success) { return success ? "[ OK ] " : "[FAIL] "; }
+	string markOff() { return ""; }
+}
+
 }
