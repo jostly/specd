@@ -202,9 +202,17 @@ class Match(T) {
 		}
 	}
 
-	bool opEquals(T rhs) {
-		equal(this, rhs);
-		return true;
+	// Test for Object, so we can use the override flag properly
+	static if (is(T == Object)) {		
+		override bool opEquals(Object rhs) {
+			equal(this, rhs);
+			return true;
+		}		
+	} else {
+		bool opEquals(T rhs) {
+			equal(this, rhs);
+			return true;
+		}		
 	}
 
 	alias Object.opEquals opEquals;
