@@ -2,15 +2,36 @@ module specd.runner;
 
 import specd.reporter;
 
+import core.runtime;
+
+import std.stdio;
+
 version(specrunner) {
-	int main() {
+	bool runner() {
+
+		foreach( m; ModuleInfo )
+        {
+            if( m )
+            {
+                auto fp = m.unitTest;
+
+                if( fp )
+                {
+                    fp();
+                }
+            }
+        }
+
 		auto reporter = new ConsoleReporter();
 
 		bool completeSuccess = reporter.report();
-		if (completeSuccess) {
-			return 0;
-		} else {
-			return 10; // Indicate failures so scripts can check result of running unit tests
-		}
+
+		return completeSuccess;		
 	}
+
+	static this() {
+		Runtime.moduleUnitTester(&runner);
+	}
+
+	
 }
