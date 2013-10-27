@@ -24,6 +24,13 @@ version(SpecDTests) unittest {
 }
 
 version(SpecDTests) unittest {
+	auto a = 1;
+	const(int) f() { return a; }
+	describe("const(T)")
+		.should("work with matchers", (_) { f().must.equal(a); });
+}
+
+version(SpecDTests) unittest {
 
 	describe("equal matching").should([		
 		"work on string": {
@@ -178,6 +185,7 @@ class Match(T) {
 		this.match = match;
 		this.file = file;
 		this.line = line;
+		this.dummyMatch = T.init;
 	}
 
 	// Negated match
