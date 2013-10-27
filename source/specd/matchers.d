@@ -178,6 +178,7 @@ class Match(T) {
 		this.match = match;
 		this.file = file;
 		this.line = line;
+		this.dummyMatch = T.init;
 	}
 
 	// Negated match
