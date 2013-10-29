@@ -2,6 +2,9 @@ module specd.matchers;
 
 import specd.specd;
 
+import std.math;
+import std.range;
+import std.traits;
 import std.stdio;
 import std.conv, std.string;
 
@@ -24,10 +27,60 @@ version(SpecDTests) unittest {
 }
 
 version(SpecDTests) unittest {
+	import std.array;
+	import std.format;
 	auto a = 1;
 	const(int) f() { return a; }
 	describe("const(T)")
 		.should("work with matchers", (_) { f().must.equal(a); });
+
+	string fmt(double d) {
+	  auto w = appender!string();
+	  formattedWrite(w, "%e", d);
+	  return w.data;
+	}
+
+	double x = 1.0;
+	double y =	1.0;
+	double toleranceWeak = 0.00001;
+	double toleranceStrict = 0.0000001;
+	double z =	1.0 + 0.000001;
+	describe(text("x and y (", fmt(x), ",", fmt(y), ")"))
+	  .should("be approxEqual since they are equal", (_) {
+		  x.must.be.approxEqual(y, 0, 0);
+		  x.must.approxEqual(y, 0, 0);
+		});
+
+	describe(text("x and z (", fmt(x), ",", fmt(z), ")"))
+	  .should("be approxEqual", (_) {
+		  x.must.be.approxEqual(z, toleranceWeak, toleranceWeak);
+		  x.must.approxEqual(z, toleranceWeak, toleranceWeak);
+		});
+
+	describe(text("at strict threshold x and z (", fmt(x), ",", fmt(z), ")"))
+	  .should("*not* be approxEqual", (_) {
+		  x.must.not.be.approxEqual(z, toleranceStrict, toleranceStrict);
+		  x.must.not.approxEqual(z, toleranceStrict, toleranceStrict);
+		});
+
+	describe("[x, y, z]")
+	  .should("be approxEqual [z, y, x]", (_) {
+		  auto first = [x, y, z];
+		  auto second = [z, y, x];
+		  first.must.be.approxEqual(second, toleranceWeak, toleranceWeak);
+		});
+
+	describe("at strict threshold [x, y, z]")
+	  .should("*not* be approxEqual [z, y, x]", (_) {
+		  [x, y, z].must.not.be
+			.approxEqual([z, y, x], toleranceStrict, toleranceStrict);
+		});
+
+	describe("[x, x, x]")
+	  .should("*not* be approxEqual [x, x]", (_) {
+		  [x, x, x].must.not.be
+			.approxEqual([x, x], toleranceWeak, toleranceWeak);
+		});
 }
 
 version(SpecDTests) unittest {
@@ -215,6 +268,19 @@ class Match(T) {
 		return true;
 	}
 
+    static if (isFloatingPoint!T) {
+      bool approxEqual(T rhs, T maxRelDiff = 1e-2, T maxAbsDiff = 1e-5) {
+		.approxEqual(this, rhs, maxRelDiff, maxAbsDiff);
+		return true;
+      }
+    } else static if(isInputRange!T && isFloatingPoint!(ElementType!T)) {
+      bool approxEqual(T rhs, ElementType!T maxRelDiff = 1e-2, ElementType!T maxAbsDiff = 1e-5) {
+		.approxEqual(this, rhs, maxRelDiff, maxAbsDiff);
+		return true;
+      }
+    }
+
+
 	alias Object.opEquals opEquals;
 
 	void throwMatchException(string reason) {
@@ -238,6 +304,17 @@ void equal(T, T1)(Match!T matcher, T1 expected)
 		matcher.throwMatchException("Expected " ~ 
 			(matcher.isPositiveMatch ? "" : "not ") ~
 			"<" ~ text(expected) ~ "> but got <" ~ 
+			text(match) ~ ">");
+}
+
+void approxEqual(T, T1, V)(Match!T matcher, T1 expected, V maxRelDiff, V maxAbsDiff)
+  if (is(typeof(expected == matcher.dummyMatch) == bool))
+{
+	auto match = matcher.match();
+	if ((std.math.approxEqual(expected, match, maxRelDiff, maxAbsDiff)) != matcher.isPositiveMatch)
+		matcher.throwMatchException("Expected Approx " ~
+			(matcher.isPositiveMatch ? "" : "not ") ~
+			"<" ~ text(expected) ~ "> but got <" ~
 			text(match) ~ ">");
 }
 
