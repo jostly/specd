@@ -15,7 +15,8 @@
 		{
 			"name": "test",
 			"versions": ["specrunner", "SpecDTests"],
-			"targetType": "executable"
+			"targetType": "executable",
+			"buildOptions": ["unittests"]
 		}
 	]
 }
