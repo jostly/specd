@@ -111,6 +111,27 @@ version(SpecDTests) unittest {
 		}
 	]);
 
+	describe("sameAs matching").should([
+		"work on slices": {
+			auto a = [1,2,3];
+			auto b = a;
+			b.must.be.sameAs(a);
+		}, 
+		"must fail on duplicate arrays": {
+			auto a = [1,2,3];
+			auto b = a.dup;
+			b.must.not.be.sameAs(a);
+			b.must.equal(a); 
+		},
+		"work on objects": {
+			auto a = new Object();
+			auto b = a;
+			b.must.be.sameAs(a);
+		}
+	]);
+
+
+
 	describe("between matching").should([
 		"match a range": {
 			1.must.be.between(1,3);
@@ -306,6 +327,21 @@ void equal(T, T1)(Match!T matcher, T1 expected)
 			"<" ~ text(expected) ~ "> but got <" ~ 
 			text(match) ~ ">");
 }
+
+
+
+void sameAs(T, T1)(Match!T matcher, T1 expected)
+	if (is(typeof(expected == matcher.dummyMatch) == bool))
+{
+	auto match = matcher.match();
+	if ((expected is match) != matcher.isPositiveMatch)
+		matcher.throwMatchException("Expected " ~ 
+			(matcher.isPositiveMatch ? "" : "not ") ~
+			"<" ~ text(expected) ~ "> but got <" ~ 
+			text(match) ~ ">");
+}
+
+
 
 void approxEqual(T, T1, V)(Match!T matcher, T1 expected, V maxRelDiff, V maxAbsDiff)
   if (is(typeof(expected == matcher.dummyMatch) == bool))
