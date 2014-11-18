@@ -16,7 +16,7 @@ version(SpecDTests) unittest {
 	}
 
 	describe("the must function")
-		.should("wrap a lazy expression in a Match without evaluating it", (when) {
+		.should("wrap a lazy expression in a Match without evaluating it", {
 			auto m = oneTimeCalculation().must();
 			assert(evaluated == false);
 			assert(m.match() == 1);
@@ -32,7 +32,7 @@ version(SpecDTests) unittest {
 	auto a = 1;
 	const(int) f() { return a; }
 	describe("const(T)")
-		.should("work with matchers", (_) { f().must.equal(a); });
+		.should("work with matchers", { f().must.equal(a); });
 
 	string fmt(double d) {
 	  auto w = appender!string();
@@ -46,38 +46,38 @@ version(SpecDTests) unittest {
 	double toleranceStrict = 0.0000001;
 	double z =	1.0 + 0.000001;
 	describe(text("x and y (", fmt(x), ",", fmt(y), ")"))
-	  .should("be approxEqual since they are equal", (_) {
+	  .should("be approxEqual since they are equal", {
 		  x.must.be.approxEqual(y, 0, 0);
 		  x.must.approxEqual(y, 0, 0);
 		});
 
 	describe(text("x and z (", fmt(x), ",", fmt(z), ")"))
-	  .should("be approxEqual", (_) {
+	  .should("be approxEqual", {
 		  x.must.be.approxEqual(z, toleranceWeak, toleranceWeak);
 		  x.must.approxEqual(z, toleranceWeak, toleranceWeak);
 		});
 
 	describe(text("at strict threshold x and z (", fmt(x), ",", fmt(z), ")"))
-	  .should("*not* be approxEqual", (_) {
+	  .should("*not* be approxEqual", {
 		  x.must.not.be.approxEqual(z, toleranceStrict, toleranceStrict);
 		  x.must.not.approxEqual(z, toleranceStrict, toleranceStrict);
 		});
 
 	describe("[x, y, z]")
-	  .should("be approxEqual [z, y, x]", (_) {
+	  .should("be approxEqual [z, y, x]", {
 		  auto first = [x, y, z];
 		  auto second = [z, y, x];
 		  first.must.be.approxEqual(second, toleranceWeak, toleranceWeak);
 		});
 
 	describe("at strict threshold [x, y, z]")
-	  .should("*not* be approxEqual [z, y, x]", (_) {
+	  .should("*not* be approxEqual [z, y, x]", {
 		  [x, y, z].must.not.be
 			.approxEqual([z, y, x], toleranceStrict, toleranceStrict);
 		});
 
 	describe("[x, x, x]")
-	  .should("*not* be approxEqual [x, x]", (_) {
+	  .should("*not* be approxEqual [x, x]", {
 		  [x, x, x].must.not.be
 			.approxEqual([x, x], toleranceWeak, toleranceWeak);
 		});

@@ -6,32 +6,32 @@ import core.runtime;
 
 import std.stdio;
 
-version(specrunner) {
-	bool runner() {
+version(NoAutoSpecDRun) {
+} else {
+    shared static this() {
+        Runtime.moduleUnitTester(&runSpecs);
+    }
+}
 
-		foreach( m; ModuleInfo )
+
+bool runSpecs() {
+
+	foreach( m; ModuleInfo )
+    {
+        if( m )
         {
-            if( m )
-            {
-                auto fp = m.unitTest;
+            auto fp = m.unitTest;
 
-                if( fp )
-                {
-                    fp();
-                }
+            if( fp )
+            {
+                fp();
             }
         }
+    }
 
-		auto reporter = new ConsoleReporter();
+	auto reporter = new ConsoleReporter();
 
-		bool completeSuccess = reporter.report();
+	bool completeSuccess = reporter.report();
 
-		return completeSuccess;		
-	}
-
-	static this() {
-		Runtime.moduleUnitTester(&runner);
-	}
-
-	
+	return completeSuccess;		
 }

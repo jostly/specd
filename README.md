@@ -25,30 +25,16 @@ Write specifications in a unittest block:
 		;
 	}
 
-To automatically run the tests with reporting, compile with version /specrunner/:
+Run the unit tests:
 
-	dmd /source/ -unittest -version=specrunner
+	dmd /source/ -unittest
 
-or if you're using dub, create a configuration in package.json:
+or if you're using dub:
 
-	"configurations": [
-		{
-			"name": "test",
-			"versions": ["specrunner"],
-			"targetType": "executable"
-		}
-	]
+	dub test
 
-Compiling with /specrunner/ will add a simple main():
-
-	version(specrunner) {
-		int main() {
-			return reportAllSpecs() ? 0 : 10;
-		}
-	}
-
-If you prefer to activate it yourself, just call reportAllSpecs(). It returns true if
-all tests succeded, false otherwise.
+If you want to disable specd's own test runner for some reason, define the
+version NoAutoSpecDRun.
 
 ## Specifications
 

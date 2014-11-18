@@ -9,7 +9,6 @@ auto describe(string title) {
 }
 
 version(SpecDTests) unittest {
-
 	int executionSequence = 0;
 	int executionFlag = 0;
 	bool executionRan = false;
