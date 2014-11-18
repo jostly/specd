@@ -16,7 +16,7 @@
 			"name": "test",
 			"versions": ["specrunner", "SpecDTests"],
 			"dflags": ["-main"],
-			"targetType": "executable"
+			"buildOptions": ["unittests"]
 		}
 	]
 }
