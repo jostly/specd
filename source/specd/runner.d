@@ -1,37 +1,30 @@
 module specd.runner;
 
 import specd.reporter;
-
 import core.runtime;
 
-import std.stdio;
-
-version(NoAutoSpecDRun) {
-} else {
+version(NoAutoSpecDRun) {}
+else:
+version(unittest) {
     shared static this() {
-        Runtime.moduleUnitTester(&runSpecs);
-    }
-}
+        Runtime.moduleUnitTester = function() {
 
+            foreach( m; ModuleInfo ) {   
+                if( m ) {
+                    auto fp = m.unitTest;
 
-bool runSpecs() {
-
-	foreach( m; ModuleInfo )
-    {
-        if( m )
-        {
-            auto fp = m.unitTest;
-
-            if( fp )
-            {
-                fp();
+                    if( fp ) {
+                        fp();
+                    }
+                }
             }
-        }
+
+            auto reporter = new ConsoleReporter();
+
+            bool completeSuccess = reporter.report();
+
+            return completeSuccess; 
+        };
     }
-
-	auto reporter = new ConsoleReporter();
-
-	bool completeSuccess = reporter.report();
-
-	return completeSuccess;		
 }
+
